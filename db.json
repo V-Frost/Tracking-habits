@@ -1,0 +1,7 @@
+{
+    "habits": [
+      { "id": 1, "habitName": "Читати книги", "description": "30 хвилин на день" },
+      { "id": 2, "habitName": "Медитація", "description": "10 хвилин" }
+    ]
+  }
+  

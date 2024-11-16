@@ -1,57 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useState, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import HabitCard from '../components/HabitCard';
 import HabitInput from '../components/HabitInput';
 import CustomButton from '../components/CustomButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const fetchHabits = async () => {
+  const response = await fetch('https://my-json-server.typicode.com/<V-Frost>/<Tracking-habits>/habits');
+  if (!response.ok) {
+    throw new Error('Failed to fetch habits');
+  }
+  return response.json();
+};
 
 export default function Main() {
-  const [habits, setHabits] = useState([]);
   const navigation = useNavigation();
+  const { data: habits, isLoading, error } = useQuery({
+    queryKey: ['habits'],
+    queryFn: fetchHabits
+  });
+  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    const loadHabits = async () => {
-      try {
-        const storedHabits = await AsyncStorage.getItem('habits');
-        if (storedHabits) {
-          setHabits(JSON.parse(storedHabits));
-        }
-      } catch (error) {
-        console.log('Помилка завантаження звичок:', error);
-      }
-    };
-    loadHabits();
-  }, []);
+  const filteredHabits = useMemo(() => {
+    if (!habits) return [];
+    return habits.filter((habit) =>
+      habit.habitName.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [habits, searchQuery]);
 
-  const saveHabits = async (newHabits) => {
-    try {
-      await AsyncStorage.setItem('habits', JSON.stringify(newHabits));
-    } catch (error) {
-      console.log('Помилка збереження звичок:', error);
-    }
-  };
-
-  const handleAddHabit = (habitName, description) => {
-    if (!habitName) {
-      Alert.alert('Помилка', 'Введіть назву для звички.');
-      return;
-    }
-    const newHabits = [...habits, { habitName, description }];
-    setHabits(newHabits);
-    saveHabits(newHabits);
-  };
+  const handleSearch = useCallback((query) => setSearchQuery(query), []);
 
   return (
     <View style={styles.container}>
-      <HabitInput onAddHabit={handleAddHabit} />
-
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Пошук звичок"
+        value={searchQuery}
+        onChangeText={handleSearch}
+      />
       <ScrollView style={styles.habitList}>
-        {habits.map((habit, index) => (
-          <HabitCard key={index} habitName={habit.habitName} description={habit.description} />
+        {filteredHabits.map((habit) => (
+          <HabitCard key={habit.id} habitName={habit.habitName} description={habit.description} />
         ))}
       </ScrollView>
-
       <View style={styles.buttonContainer}>
         <CustomButton title="Статистика" onPress={() => navigation.navigate('Statistics')} />
         <CustomButton title="Нагадування" onPress={() => navigation.navigate('Reminders')} />
@@ -66,6 +58,13 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#c5deff',
+  },
+  searchInput: {
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 15,
   },
   habitList: {
     flex: 1,

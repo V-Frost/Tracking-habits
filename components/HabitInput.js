@@ -1,49 +1,57 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
+import CustomButton from '../components/CustomButton';
 
-export default function HabitInput({ onAddHabit }) {
-  const [habitName, setHabitName] = useState('');
-  const [description, setDescription] = useState('');
+const fetchHabitDetails = async (habitId) => {
+  const response = await fetch(`https://my-json-server.typicode.com/<YourGitHubUsername>/<RepositoryName>/habits/${habitId}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch habit details');
+  }
+  return response.json();
+};
 
-  const handleAdd = () => {
-    onAddHabit(habitName, description);
-    setHabitName('');
-    setDescription('');
-  };
+export default function HabitDetails({ route, navigation }) {
+  const { habitId } = route.params;
+  const { data: habit, isLoading, error } = useQuery({
+    queryKey: ['habit', habitId],
+    queryFn: () => fetchHabitDetails(habitId)
+  });
+
+  if (isLoading) return <Text>Loading...</Text>;
+  if (error) return <Text>Error loading habit details.</Text>;
 
   return (
     <View style={styles.container}>
-      <TextInput
-        style={styles.input}
-        placeholder="Назва звички"
-        value={habitName}
-        onChangeText={setHabitName}
+      <Text style={styles.header}>Деталі звички</Text>
+      <Text style={styles.habitName}>{habit.habitName}</Text>
+      <Text style={styles.description}>{habit.description}</Text>
+      <CustomButton
+        title="Повернутись на головну"
+        onPress={() => navigation.navigate('Main')}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Опис"
-        value={description}
-        onChangeText={setDescription}
-      />
-      <View style={styles.buttonSpacing}>
-        <Button title="Додати звичку" onPress={handleAdd} />
-      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: 'bold',
     marginBottom: 20,
   },
-  input: {
-    borderColor: '#ccc',
-    borderWidth: 1,
-    padding: 8,
-    marginVertical: 5,
-    borderRadius: 5,
+  habitName: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 10,
   },
-  buttonSpacing: {
-    marginTop: 10, 
+  description: {
+    fontSize: 16,
+    color: '#555',
   },
 });
