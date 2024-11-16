@@ -1,4 +1,3 @@
-// components/HabitCard.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
@@ -34,11 +33,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#3E3E3E',
   },
- 
-  buttonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
 });
-

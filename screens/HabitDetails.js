@@ -1,35 +1,14 @@
-
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import CustomButton from '../components/CustomButton';
 
-const fetchHabitDetails = async (habitId) => {
-  const response = await fetch(`https://my-json-server.typicode.com/<YourGitHubUsername>/<RepositoryName>/habits/${habitId}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch habit details');
-  }
-  return response.json();
-};
-
-export default function HabitDetails({ route, navigation }) {
-  const { habitId } = route.params;
-  const { data: habit, isLoading, error } = useQuery(['habit', habitId], () =>
-    fetchHabitDetails(habitId)
-  );
-
-  if (isLoading) return <Text>Loading...</Text>;
-  if (error) return <Text>Error loading habit details.</Text>;
+export default function HabitDetails({ route }) {
+  const { habit } = route.params; // Отримання звички через параметри
 
   return (
     <View style={styles.container}>
       <Text style={styles.header}>Деталі звички</Text>
-      <Text style={styles.habitName}>{habit.habitName}</Text>
-      <Text style={styles.description}>{habit.description}</Text>
-      <CustomButton
-        title="Повернутись на головну"
-        onPress={() => navigation.navigate('Main')}
-      />
+      <Text style={styles.habitName}>Назва: {habit.habitName}</Text>
+      <Text style={styles.description}>Опис: {habit.description}</Text>
     </View>
   );
 }
@@ -37,22 +16,24 @@ export default function HabitDetails({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#1A1A2E', // Темний фон
   },
   header: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#F7F7F7',
     marginBottom: 20,
   },
   habitName: {
     fontSize: 18,
-    fontWeight: '600',
+    color: '#F7F7F7',
     marginBottom: 10,
   },
   description: {
     fontSize: 16,
-    color: '#555',
+    color: '#CCCCCC',
   },
 });
-    

@@ -22,6 +22,7 @@ export default function App() {
           <Stack.Screen name="Statistics" component={Statistics} />
           <Stack.Screen name="Reminders" component={Reminders} />
           <Stack.Screen name="Settings" component={Settings} />
+          
         </Stack.Navigator>
       </NavigationContainer>
     </QueryClientProvider>
