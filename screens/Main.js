@@ -7,7 +7,7 @@ import HabitInput from '../components/HabitInput';
 import CustomButton from '../components/CustomButton';
 
 const fetchHabits = async () => {
-  const response = await fetch('https://my-json-server.typicode.com/<V-Frost>/<Tracking-habits>/habits');
+  const response = await fetch('https://my-json-server.typicode.com/V-Frost/tracking-habits-api/habits');
   if (!response.ok) {
     throw new Error('Failed to fetch habits');
   }
