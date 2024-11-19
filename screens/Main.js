@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import {
+  SafeAreaView,
   View,
   Text,
   StyleSheet,
@@ -8,34 +9,36 @@ import {
   TouchableOpacity,
   Modal,
   Alert,
-  Button,
+  Image,
+  Platform,
+  StatusBar,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
 
 const colors = {
-  primary: '#E94560', // Кремовий акцент для кнопок
-  secondary: '#F0A500', // Світло-кремовий для підказок
-  background: '#1A1A2E', // Темно-синій фон
-  cardBackground: '#16213E', // Синьо-сірий для карток і полів
-  border: '#222831', // Трохи світліший темно-синій для рамок
-  textPrimary: '#F7F7F7', // Білий текст
-  textSecondary: '#CCCCCC', // Світло-сірий текст
-  modalOverlay: 'rgba(0, 0, 0, 0.7)', // Прозорий чорний для фону модального вікна
-  danger: '#E94560', // Кремовий червоний для помилок
+  primary: '#E94560',
+  secondary: '#F0A500',
+  background: '#1A1A2E',
+  cardBackground: '#16213E',
+  border: '#222831',
+  textPrimary: '#F7F7F7',
+  textSecondary: '#CCCCCC',
+  modalOverlay: 'rgba(0, 0, 0, 0.7)',
+  danger: '#E94560',
 };
 
-
 const fetchHabits = async () => {
-  const response = await fetch('https://my-json-server.typicode.com/V-Frost/tracking-habits/habits');
+  const response = await fetch(
+    'https://my-json-server.typicode.com/V-Frost/tracking-habits/habits'
+  );
   if (!response.ok) {
     throw new Error('Failed to fetch habits');
   }
   return response.json();
 };
 
-export default function Main() {
-  const navigation = useNavigation();
+export default function Main({ navigation }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['habits'],
     queryFn: fetchHabits,
@@ -46,6 +49,19 @@ export default function Main() {
   const [isModalVisible, setModalVisible] = useState(false);
   const [newHabitName, setNewHabitName] = useState('');
   const [newDescription, setNewDescription] = useState('');
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const userLoggedIn = await AsyncStorage.getItem('userLoggedIn');
+      if (!userLoggedIn) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'LoginPage' }],
+        });
+      }
+    };
+    checkLoginStatus();
+  }, [navigation]);
 
   const toggleModal = () => {
     setModalVisible(!isModalVisible);
@@ -64,12 +80,10 @@ export default function Main() {
       toggleModal();
     } else {
       Alert.alert(
-        'Помилка', // Заголовок
-        'Будь ласка, заповніть всі поля перед додаванням звички.', // Повідомлення
-        [
-          { text: 'OK', onPress: () => console.log('Alert закрито') }, // Кнопка
-        ],
-        { cancelable: true } // Закриття по кліку за межами
+        'Помилка',
+        'Будь ласка, заповніть всі поля перед додаванням звички.',
+        [{ text: 'OK', onPress: () => console.log('Alert закрито') }],
+        { cancelable: true }
       );
     }
   };
@@ -84,108 +98,134 @@ export default function Main() {
     );
   }, [allHabits, searchQuery]);
 
-  const renderItem = useCallback(({ item }) => {
-    return (
-      <TouchableOpacity onPress={() => navigation.navigate('HabitDetails', { habit: item })}>
-        <View style={styles.habitCard}>
-          <Text style={styles.habitName}>{item.habitName}</Text>
-          <Text style={styles.habitDescription}>{item.description}</Text>
-        </View>
-      </TouchableOpacity>
-    );
-  }, [navigation]);
-  
+  const renderItem = useCallback(
+    ({ item }) => {
+      return (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('HabitDetails', { habit: item })}
+        >
+          <View style={styles.habitCard}>
+            <Text style={styles.habitName}>{item.habitName}</Text>
+            <Text style={styles.habitDescription}>{item.description}</Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [navigation]
+  );
 
   if (isLoading) {
     return (
-      <View style={styles.loader}>
+      <SafeAreaView style={styles.container}>
         <Text>Loading habits...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
+      <SafeAreaView style={styles.container}>
         <Text style={styles.errorText}>Error: {error.message}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <TextInput
         style={styles.searchBar}
         placeholder="Пошук звичок..."
-        placeholderTextColor="#beb6c8" // Світло-сірий колір для підказки
+        placeholderTextColor="#beb6c8"
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
-
       <FlatList
         data={filteredHabits}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
       />
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={toggleModal}
-      >
+      <TouchableOpacity style={styles.addButton} onPress={toggleModal}>
         <Text style={styles.addButtonText}>+ Додати звичку</Text>
       </TouchableOpacity>
-
       <Modal
         visible={isModalVisible}
         transparent
         animationType="slide"
         onRequestClose={toggleModal}
       >
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <Text style={styles.modalHeader}>Додати нову звичку</Text>
-
-      {/* Поле для введення назви звички */}
-      <TextInput
-        style={styles.input}
-        placeholder="Назва звички"
-        value={newHabitName}
-        onChangeText={setNewHabitName}
-        placeholderTextColor="#B0B0B0" // Колір підказки
-      />
-
-      {/* Поле для введення опису звички */}
-      <TextInput
-        style={[styles.input, styles.textArea]} // Використовуємо textArea для багаторядкового тексту
-        placeholder="Опис звички"
-        value={newDescription}
-        onChangeText={setNewDescription}
-        multiline
-        numberOfLines={4}
-        placeholderTextColor="#B0B0B0" // Колір підказки
-      />
-
-      {/* Кнопки дій */}
-      <View style={styles.modalButtons}>
-        <TouchableOpacity style={styles.confirmButton} onPress={addNewHabit}>
-          <Text style={styles.buttonText}>Додати</Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalHeader}>Додати нову звичку</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Назва звички"
+              value={newHabitName}
+              onChangeText={setNewHabitName}
+              placeholderTextColor="#B0B0B0"
+            />
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Опис звички"
+              value={newDescription}
+              onChangeText={setNewDescription}
+              multiline
+              numberOfLines={4}
+              placeholderTextColor="#B0B0B0"
+            />
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.confirmButton}
+                onPress={addNewHabit}
+              >
+                <Text style={styles.buttonText}>Додати</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={toggleModal}
+              >
+                <Text style={styles.buttonText}>Скасувати</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      <View style={styles.bottomNav}>
+        <TouchableOpacity onPress={() => navigation.navigate('Statistics')}>
+          <Image
+            source={require('../assets/statistics.png')}
+            style={[styles.navIcon, { tintColor: '#FFFFFF' }]}
+          />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.cancelButton} onPress={toggleModal}>
-          <Text style={styles.buttonText}>Скасувати</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+          <Image
+            source={require('../assets/settings.png')}
+            style={[styles.navIcon, { tintColor: '#FFFFFF' }]}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <Image
+            source={require('../assets/profile.png')}
+            style={[styles.navIcon, { tintColor: '#FFFFFF' }]}
+          />
         </TouchableOpacity>
       </View>
-    </View>
-  </View>
-</Modal>
-
-    </View>
+    </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
     backgroundColor: colors.background,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0, // Відступ для статус-бара
+
+  },
+  logoutText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   searchBar: {
     height: 40,
@@ -193,10 +233,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    marginBottom: 10,
-    backgroundColor: '#645874', // Світліший відтінок синього для контрасту
+    marginBottom: 30,
+    marginTop: 45,
+    backgroundColor: '#645874',
     color: colors.textPrimary,
-    placeholder: '#A8A8C1', // Світло-сірий для підказки
   },
   habitCard: {
     backgroundColor: colors.cardBackground,
@@ -222,17 +262,17 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 20,
-    right: 20,
-    backgroundColor: '#0b2442', // Ніжно-синій для акцентної кнопки
+    bottom: 80, // Розташовуємо над панелькою
+    right: 15, // Відступ від правого краю
+    backgroundColor: '#0b2442',
     borderRadius: 50,
     padding: 15,
-    elevation: 5,
+    elevation: 3, // Тінь для Android
   },
   addButtonText: {
     color: '#FFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: 'medium',
   },
   modalOverlay: {
     flex: 1,
@@ -242,13 +282,9 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '90%',
-    backgroundColor: '#1F1F3B', // Темно-синій для фону модального вікна
+    backgroundColor: '#1F1F3B',
     borderRadius: 15,
     padding: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
     elevation: 10,
   },
   modalHeader: {
@@ -265,11 +301,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 15,
-    backgroundColor: '#2D2D4D', // Трохи світліший темний відтінок для полів
+    backgroundColor: '#2D2D4D',
     marginBottom: 15,
     fontSize: 16,
     color: colors.textPrimary,
-    placeholderTextColor: '#A8A8C1',
   },
   textArea: {
     height: 100,
@@ -281,7 +316,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   confirmButton: {
-    backgroundColor: '#4A90E2', // Синій для кнопки "Додати"
+    backgroundColor: '#4A90E2',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -290,7 +325,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#3A3A5E', // Темно-сірий синій для кнопки "Скасувати"
+    backgroundColor: '#3A3A5E',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -302,5 +337,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingVertical: 10,
+    backgroundColor: '#252541',
+    borderTopWidth: 1,
+    borderColor: colors.border,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0, // Забезпечує, що панель впирається в правий край
+    elevation: 5, // Тінь для Android
+    shadowColor: '#000', // Тінь для iOS
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  
+  navIcon: {
+    width: 40,
+    height: 40,
+    
   },
 });

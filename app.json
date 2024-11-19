@@ -4,6 +4,7 @@
     "slug": "habits",
     "version": "1.0.0",
     "orientation": "portrait",
+    "newArchEnabled": true,
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -18,10 +19,23 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "VIBRATE",
+        "VIBRATE"
+      ],
+      "package": "com.anonymous.habits"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-sqlite"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8c5ba506-185f-437e-bb99-fe6553271ee4"
+      }
     }
   }
 }
